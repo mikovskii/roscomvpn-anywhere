@@ -11,7 +11,7 @@ issue. Используйте GitHub Private Vulnerability Reporting в разд
 **Security → Advisories → Report a vulnerability**, если он доступен.
 
 Если проблема относится к самому приложению Anywhere, сообщите о ней напрямую
-в https://github.com/Anywhere-Network/Anywhere.
+в https://github.com/NodePassProject/Anywhere.
 
 ## Область проекта
 

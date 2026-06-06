@@ -3,7 +3,7 @@
 # RoscomVPN Routing для Anywhere
 
 Готовые и автоматически обновляемые правила маршрутизации для  
-[Anywhere](https://github.com/Anywhere-Network/Anywhere)
+[Anywhere](https://github.com/NodePassProject/Anywhere)
 
 [![CI](https://github.com/mikovskii/roscomvpn-anywhere/actions/workflows/ci.yml/badge.svg)](https://github.com/mikovskii/roscomvpn-anywhere/actions/workflows/ci.yml)
 [![Update](https://github.com/mikovskii/roscomvpn-anywhere/actions/workflows/update-configs.yml/badge.svg)](https://github.com/mikovskii/roscomvpn-anywhere/actions/workflows/update-configs.yml)
@@ -198,7 +198,7 @@ Workflow [update-configs.yml](.github/workflows/update-configs.yml) запуск
   актуальные списки IP-диапазонов;
 - [RoscomVPN GeoSite](https://github.com/hydraponique/roscomvpn-geosite) —
   актуальные списки доменов;
-- [Anywhere](https://github.com/Anywhere-Network/Anywhere) — приложение и
+- [Anywhere](https://github.com/NodePassProject/Anywhere) — приложение и
   формат правил `.arrs`.
 
 Все права на оригинальные проекты принадлежат их авторам.

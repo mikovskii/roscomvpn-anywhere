@@ -48,7 +48,7 @@ time this notice was written, it did not publish an explicit license file.
 
 ## Anywhere
 
-Source: https://github.com/Anywhere-Network/Anywhere
+Source: https://github.com/NodePassProject/Anywhere
 
 License: GNU General Public License v3.0. This repository does not copy or
 distribute Anywhere source code; it produces data files compatible with its
