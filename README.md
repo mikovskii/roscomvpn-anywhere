@@ -1,42 +1,149 @@
-# Роутинг RoscomVPN для Anywhere
+<div align="center">
 
-Готовые наборы правил маршрутизации для
-[Anywhere](https://github.com/Anywhere-Network/Anywhere), сгенерированные из
-тех же источников RoscomVPN GeoSite и GeoIP, которые используются в
-конфигурациях для Xray, Happ, INCY и Mihomo.
+# RoscomVPN Routing для Anywhere
 
-Репозитории источников и точные теги, использованные для создания текущих
-файлов, указаны в [`sources.json`](sources.json).
+Готовые и автоматически обновляемые правила маршрутизации для  
+[Anywhere](https://github.com/Anywhere-Network/Anywhere)
 
-## Профили
+[Установка](#установка) · [Профили](#выбор-профиля) ·
+[Обновление](#обновление-правил) · [Вопросы](#частые-вопросы)
+
+</div>
+
+---
+
+## Возможности
+
+- российские и белорусские ресурсы работают напрямую;
+- заблокированные и выбранные зарубежные сервисы направляются через VPN;
+- рекламные, телеметрические и другие нежелательные домены блокируются;
+- правила обновляются из проектов RoscomVPN GeoIP и GeoSite;
+- поддерживаются домены, IPv4 и IPv6;
+- конфигурации проверяются перед каждой автоматической публикацией.
+
+## Выбор профиля
+
+| Профиль | Кому подходит | Маршрутизация |
+| --- | --- | --- |
+| **DEFAULT** | Рекомендуется большинству пользователей | RU/BY и доверенные сервисы напрямую, выбранные сервисы через VPN, нежелательные домены блокируются |
+| **WHITELIST** | Нужен строгий белый список | Только ресурсы из белого списка напрямую, всё остальное через маршрут по умолчанию |
+
+> [!IMPORTANT]
+> Не устанавливайте DEFAULT и WHITELIST одновременно. Выберите один профиль.
+
+## Установка
+
+### 1. Откройте добавление подписки
+
+В приложении Anywhere перейдите:
+
+**Settings → Routing Rules → Subscribe**
+
+### 2. Добавьте ссылки выбранного профиля
+
+Скопируйте адрес нужной ссылки, вставьте его в поле
+**Anywhere Routing Rule Set URL** и нажмите **Subscribe**.
+
+Каждая ссылка добавляется отдельно. После добавления откройте набор и
+назначьте действие, указанное в таблице.
+
+> [!TIP]
+> Используйте **Subscribe**, а не импорт локального файла. Подписку можно
+> обновлять без повторного добавления.
 
 ### DEFAULT
 
-Импортируйте все файлы из `ANYWHERE/DEFAULT` и назначьте:
+Для установки полного профиля добавьте все семь подписок:
 
-- `DIRECT_*` — действие **DIRECT**
-- `PROXY.arrs` — нужный прокси или цепочку прокси
-- `REJECT.arrs` — действие **REJECT**
+| Набор | Назначить действие | Ссылка |
+| --- | --- | --- |
+| DIRECT Domains | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_DOMAINS.arrs) |
+| DIRECT IP 1 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_1.arrs) |
+| DIRECT IP 2 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_2.arrs) |
+| DIRECT IP 3 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_3.arrs) |
+| DIRECT IP 4 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_4.arrs) |
+| PROXY | ваш прокси или цепочка | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/PROXY.arrs) |
+| REJECT | **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/REJECT.arrs) |
 
-Список IP-адресов разделён на несколько файлов, поскольку Anywhere допускает
-не более 10 000 правил в одном пользовательском наборе.
+Проверьте назначения после установки:
+
+```text
+DIRECT Domains  → DIRECT
+DIRECT IP 1     → DIRECT
+DIRECT IP 2     → DIRECT
+DIRECT IP 3     → DIRECT
+DIRECT IP 4     → DIRECT
+PROXY           → ваш VPN-прокси или цепочка
+REJECT          → REJECT
+```
 
 ### WHITELIST
 
-Импортируйте все файлы из `ANYWHERE/WHITELIST` и назначьте:
+Для установки профиля белого списка добавьте две подписки:
 
-- `DIRECT.arrs` — действие **DIRECT**
-- `REJECT.arrs` — действие **REJECT**
+| Набор | Назначить действие | Ссылка |
+| --- | --- | --- |
+| DIRECT | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/DIRECT.arrs) |
+| REJECT | **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/REJECT.arrs) |
 
-В качестве маршрута по умолчанию в приложении выберите нужный прокси или
-цепочку прокси.
+В качестве маршрута по умолчанию в Anywhere выберите нужный VPN-прокси или
+цепочку.
 
-Anywhere назначает одно действие всему импортированному набору, поэтому
-правила DIRECT, PROXY и REJECT должны находиться в отдельных `.arrs`-файлах.
+## Обновление правил
 
-## Ручная генерация
+Откройте нужный набор в разделе **Routing Rules** и нажмите **Update**.
+Anywhere повторно загрузит актуальный `.arrs` по сохранённой GitHub Raw ссылке.
 
-Используйте локальные копии исходных репозиториев с нужными версиями:
+Назначенное набору действие при обновлении сохраняется.
+
+## Частые вопросы
+
+### Почему профиль DEFAULT состоит из семи ссылок?
+
+Anywhere назначает одно действие всему набору правил. Поэтому DIRECT, PROXY и
+REJECT должны храниться отдельно.
+
+Кроме того, Anywhere разрешает не более 10 000 правил в одном пользовательском
+наборе. Список DIRECT превышает этот лимит и разделён на домены и четыре части
+IP-диапазонов.
+
+### Можно ли установить весь профиль одной ссылкой?
+
+Нет. Текущая версия Anywhere не поддерживает пакетный манифест, вложенные
+`RULE-SET` или действие внутри `.arrs`. Одна ссылка создаёт один набор с одним
+назначаемым действием.
+
+### Почему нельзя объединить DIRECT, PROXY и REJECT?
+
+Формат `.arrs` содержит только имя набора и правила совпадения. Действие
+выбирается отдельно в интерфейсе Anywhere и применяется сразу ко всему набору.
+
+### Будут ли правила обновляться автоматически в приложении?
+
+Репозиторий обновляет файлы автоматически. В текущей версии Anywhere
+обновление подписанного набора запускается кнопкой **Update**.
+
+## Источники и обновления
+
+Правила генерируются из:
+
+- [RoscomVPN GeoIP](https://github.com/hydraponique/roscomvpn-geoip)
+- [RoscomVPN GeoSite](https://github.com/hydraponique/roscomvpn-geosite)
+
+Точные версии источников записаны в [`sources.json`](sources.json).
+
+GitHub Actions каждые шесть часов проверяет новые 12-значные теги обоих
+проектов. При обнаружении обновления workflow:
+
+1. загружает новые версии источников;
+2. генерирует `.arrs`;
+3. проверяет формат, CIDR, дубликаты, лимиты и приоритеты;
+4. обновляет `sources.json`;
+5. публикует изменения от имени `github-actions[bot]`.
+
+## Для разработчиков
+
+### Ручная генерация
 
 ```sh
 python3 scripts/generate_anywhere.py \
@@ -46,40 +153,41 @@ python3 scripts/generate_anywhere.py \
 python3 scripts/validate_anywhere.py
 ```
 
-Генератор поддерживает нативные типы правил Anywhere:
+Генератор поддерживает доменные суффиксы, ключевые слова, IPv4 CIDR и IPv6
+CIDR. Записи GeoSite `full:` преобразуются в суффиксы, поскольку Anywhere не
+имеет типа для точного совпадения домена.
 
-- доменный суффикс
-- ключевое слово домена
-- IPv4 CIDR
-- IPv6 CIDR
+Для сохранения порядка Xray `block-proxy-direct` низкоприоритетные правила,
+полностью покрытые более приоритетным суффиксом, ключевым словом или CIDR,
+удаляются при генерации.
 
-Записи GeoSite типа `full:` преобразуются в доменные суффиксы, поскольку
-Anywhere не поддерживает точное совпадение домена. Регулярное выражение для
-однокомпонентных приватных доменов пропускается. Регулярное выражение для
-GitHub release assets заменяется устойчивым ключевым словом домена.
+### Запуск workflow
 
-Для сохранения порядка Xray `block-proxy-direct` генератор удаляет
-низкоприоритетные правила, которые полностью покрываются более приоритетным
-суффиксом, ключевым словом или CIDR. Это необходимо, потому что Anywhere
-выбирает наиболее специфичное правило среди всех пользовательских наборов, а
-не первое совпадение из исходной конфигурации.
+Workflow [update-configs.yml](.github/workflows/update-configs.yml) запускается:
 
-## Автоматическое обновление
+- автоматически каждые шесть часов;
+- вручную через `workflow_dispatch`;
+- событием `repository_dispatch` типа `update-anywhere-configs`.
 
-Workflow `.github/workflows/update-configs.yml` каждые шесть часов проверяет
-последние 12-значные теги релизов в репозиториях GeoIP и GeoSite.
+## Благодарности
 
-Workflow также можно запустить:
+Этот проект основан на правилах и идеях оригинального
+[RoscomVPN Routing](https://github.com/hydraponique/roscomvpn-routing).
 
-- вручную через `workflow_dispatch`
-- событием `repository_dispatch` с типом `update-anywhere-configs`
+Спасибо авторам и участникам проектов:
 
-При появлении новой версии GitHub Actions:
+- [RoscomVPN Routing](https://github.com/hydraponique/roscomvpn-routing) —
+  оригинальные профили маршрутизации для Happ, INCY и Mihomo;
+- [RoscomVPN GeoIP](https://github.com/hydraponique/roscomvpn-geoip) —
+  актуальные списки IP-диапазонов;
+- [RoscomVPN GeoSite](https://github.com/hydraponique/roscomvpn-geosite) —
+  актуальные списки доменов;
+- [Anywhere](https://github.com/Anywhere-Network/Anywhere) — приложение и
+  формат правил `.arrs`.
 
-1. Определяет последние теги GeoIP и GeoSite.
-2. Загружает исходники этих версий.
-3. Генерирует все `.arrs`-файлы.
-4. Проверяет формат, CIDR, дубликаты, лимиты и приоритеты правил.
-5. Обновляет версии в `sources.json`.
-6. Коммитит изменения от имени `github-actions[bot]`.
+Все права на оригинальные проекты принадлежат их авторам.
 
+---
+
+> Проект не связан с разработчиками Anywhere. Используйте конфигурации на свой
+> риск и проверяйте назначения наборов после установки.
