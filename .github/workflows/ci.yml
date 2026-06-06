@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Compile and test
+        run: |
+          python3 -m py_compile scripts/*.py tests/*.py
+          python3 -m unittest discover -s tests -v
+          python3 scripts/validate_anywhere.py
+          python3 -m json.tool sources.json >/dev/null
+          python3 -m json.tool stats.json >/dev/null
+
+      - name: Check reproducible generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          geoip_repo="$(jq -r '.geoip.repository' sources.json)"
+          geosite_repo="$(jq -r '.geosite.repository' sources.json)"
+          geoip_tag="$(jq -r '.geoip.tag' sources.json)"
+          geosite_tag="$(jq -r '.geosite.tag' sources.json)"
+
+          git clone --depth 1 --branch "$geoip_tag" \
+            "https://github.com/${geoip_repo}.git" "$RUNNER_TEMP/roscomvpn-geoip"
+          git clone --depth 1 --branch "$geosite_tag" \
+            "https://github.com/${geosite_repo}.git" "$RUNNER_TEMP/roscomvpn-geosite"
+
+          python3 scripts/generate_anywhere.py \
+            --geoip "$RUNNER_TEMP/roscomvpn-geoip" \
+            --geosite "$RUNNER_TEMP/roscomvpn-geosite"
+
+          git diff --exit-code -- ANYWHERE stats.json

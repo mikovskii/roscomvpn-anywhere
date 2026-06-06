@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ошибка приложения Anywhere
+    url: https://github.com/Anywhere-Network/Anywhere/issues
+    about: Сбои и функции самого приложения следует обсуждать в upstream.
+  - name: Исходные доменные списки
+    url: https://github.com/hydraponique/roscomvpn-geosite/issues
+    about: Ошибки в составе доменных списков.
+  - name: Исходные IP-списки
+    url: https://github.com/hydraponique/roscomvpn-geoip/issues
+    about: Ошибки в составе IP-диапазонов.

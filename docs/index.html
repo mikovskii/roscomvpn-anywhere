@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Установка автоматически обновляемых правил RoscomVPN для Anywhere."
+    >
+    <title>RoscomVPN Routing для Anywhere</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="grid-noise" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="В начало страницы">
+        <span class="brand-mark">R</span>
+        <span>RoscomVPN <b>/ Anywhere</b></span>
+      </a>
+      <nav aria-label="Навигация">
+        <a href="#install">Установка</a>
+        <a href="#profiles">Профили</a>
+        <a href="https://github.com/mikovskii/roscomvpn-anywhere">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">ROUTING RULESETS / iOS · macOS · tvOS</p>
+          <h1>Маршрутизация,<br><em>которая знает путь.</em></h1>
+          <p class="lead">
+            Готовые правила для Anywhere: локальные сервисы напрямую,
+            выбранные ресурсы через VPN, нежелательные домены в блокировку.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#profiles">Выбрать профиль</a>
+            <a
+              class="button secondary"
+              href="https://github.com/Anywhere-Network/Anywhere"
+            >Скачать Anywhere</a>
+          </div>
+        </div>
+
+        <aside class="status-panel" aria-label="Статус конфигураций">
+          <div class="panel-head">
+            <span>BUILD STATUS</span>
+            <span class="live"><i></i> READY</span>
+          </div>
+          <dl>
+            <div>
+              <dt>GeoIP</dt>
+              <dd id="geoip-version">загрузка…</dd>
+            </div>
+            <div>
+              <dt>GeoSite</dt>
+              <dd id="geosite-version">загрузка…</dd>
+            </div>
+            <div>
+              <dt>DEFAULT</dt>
+              <dd id="default-rules">—</dd>
+            </div>
+            <div>
+              <dt>WHITELIST</dt>
+              <dd id="whitelist-rules">—</dd>
+            </div>
+          </dl>
+          <p>Проверка новых источников выполняется каждые 6 часов.</p>
+        </aside>
+      </section>
+
+      <section class="steps" id="install">
+        <div class="section-label">01 / УСТАНОВКА</div>
+        <div class="section-title">
+          <h2>Три действия.<br>Несколько точных правил.</h2>
+          <p>
+            Anywhere ограничивает один набор десятью тысячами правил,
+            поэтому ссылки добавляются отдельно.
+          </p>
+        </div>
+        <ol class="step-grid">
+          <li>
+            <span>01</span>
+            <h3>Откройте Anywhere</h3>
+            <p>Перейдите в <b>Settings → Routing Rules → Subscribe</b>.</p>
+          </li>
+          <li>
+            <span>02</span>
+            <h3>Скопируйте ссылки</h3>
+            <p>Добавьте все ссылки одного выбранного профиля по очереди.</p>
+          </li>
+          <li>
+            <span>03</span>
+            <h3>Назначьте действия</h3>
+            <p>Укажите DIRECT, REJECT или ваш VPN согласно карточкам.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="profiles" id="profiles">
+        <div class="section-label">02 / ПРОФИЛИ</div>
+        <div class="profile-switch" role="tablist" aria-label="Выбор профиля">
+          <button
+            class="profile-tab active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            data-profile="default"
+          >DEFAULT <small>7 ссылок</small></button>
+          <button
+            class="profile-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            data-profile="whitelist"
+          >WHITELIST <small>2 ссылки</small></button>
+        </div>
+
+        <div class="profile-intro" id="profile-description">
+          <div>
+            <span class="profile-code">PROFILE / DEFAULT</span>
+            <h2>Сбалансированный режим</h2>
+          </div>
+          <p>
+            RU/BY и доверенные сервисы напрямую. YouTube, Telegram, GitHub и
+            другие выбранные сервисы через VPN. Реклама и телеметрия блокируются.
+          </p>
+        </div>
+
+        <div class="rule-list" id="rule-list" aria-live="polite"></div>
+
+        <div class="warning">
+          <strong>Важно</strong>
+          <p>Не устанавливайте DEFAULT и WHITELIST одновременно.</p>
+        </div>
+      </section>
+
+      <section class="update-section">
+        <div class="section-label">03 / ОБНОВЛЕНИЯ</div>
+        <div class="update-copy">
+          <h2>Ссылка остаётся.<br>Правила меняются.</h2>
+          <p>
+            Откройте подписанный набор в Routing Rules и нажмите
+            <b>Update</b>. Назначенное действие сохранится.
+          </p>
+        </div>
+        <div class="source-links">
+          <a href="https://github.com/hydraponique/roscomvpn-routing">
+            <span>Оригинальный проект</span><b>RoscomVPN Routing ↗</b>
+          </a>
+          <a href="https://github.com/hydraponique/roscomvpn-geoip">
+            <span>Источник диапазонов</span><b>RoscomVPN GeoIP ↗</b>
+          </a>
+          <a href="https://github.com/hydraponique/roscomvpn-geosite">
+            <span>Источник доменов</span><b>RoscomVPN GeoSite ↗</b>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Независимый проект. Не связан с разработчиками Anywhere.</p>
+      <a href="https://github.com/mikovskii/roscomvpn-anywhere">
+        Исходный код и документация ↗
+      </a>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      Ссылка скопирована
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

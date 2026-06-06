@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "sources": {
+    "geoip": {
+      "repository": "hydraponique/roscomvpn-geoip",
+      "tag": "202606061113"
+    },
+    "geosite": {
+      "repository": "hydraponique/roscomvpn-geosite",
+      "tag": "202604152235"
+    }
+  },
+  "profiles": {
+    "DEFAULT": {
+      "rules": 37103
+    },
+    "WHITELIST": {
+      "rules": 8132
+    }
+  },
+  "files": [
+    {
+      "path": "DEFAULT/DIRECT_DOMAINS.arrs",
+      "rules": 1017,
+      "bytes": 18193,
+      "sha256": "dea83338488508b457f3646c7e0d5ea9ea15fe0fef938f22a7b06f167ec53558"
+    },
+    {
+      "path": "DEFAULT/DIRECT_IP_1.arrs",
+      "rules": 10000,
+      "bytes": 188890,
+      "sha256": "9b93f5ff0bdb120ba9d1dd9f8f8503fe1a316bd314ce50ff78480ab08f7b23e8"
+    },
+    {
+      "path": "DEFAULT/DIRECT_IP_2.arrs",
+      "rules": 10000,
+      "bytes": 193337,
+      "sha256": "44c199cee5f25ebd7928fbeed0907513f05bb0c0328ff03bfff72e1ab2211388"
+    },
+    {
+      "path": "DEFAULT/DIRECT_IP_3.arrs",
+      "rules": 10000,
+      "bytes": 200184,
+      "sha256": "6e34109f491b40823709c4b7441d23a0f36de4164d8ce631fbe98204565961f0"
+    },
+    {
+      "path": "DEFAULT/DIRECT_IP_4.arrs",
+      "rules": 5012,
+      "bytes": 98824,
+      "sha256": "e024269dfda0a188fa301bb2363b2b1a36bc79ee20210c7cf3d21a54e8869094"
+    },
+    {
+      "path": "DEFAULT/PROXY.arrs",
+      "rules": 265,
+      "bytes": 4984,
+      "sha256": "2d22c0e2158f83e7a65884d6362426449f9735bdba73b8f7bbffc601b4570b30"
+    },
+    {
+      "path": "DEFAULT/REJECT.arrs",
+      "rules": 809,
+      "bytes": 20911,
+      "sha256": "8c85bd0aea4418b615c0beb2636e078146f90d3987794c703a8ebf577eefdfb3"
+    },
+    {
+      "path": "WHITELIST/DIRECT.arrs",
+      "rules": 7323,
+      "bytes": 145345,
+      "sha256": "d375334626f936b3ff86bc42eb042925cc56749e1bef770f26d272ace0044fc7"
+    },
+    {
+      "path": "WHITELIST/REJECT.arrs",
+      "rules": 809,
+      "bytes": 20913,
+      "sha256": "66356d390dfe85863203d92fe64dd02a0a07d9ddc867fb00de15cdef6190a09f"
+    }
+  ]
+}

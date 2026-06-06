@@ -4,10 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import ipaddress
+import json
+import os
+import shutil
+import tempfile
 from pathlib import Path
 
+from validate_anywhere import validate
+
 MAX_RULES = 10_000
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_DIRECT_DOMAINS = (
     "private",
@@ -38,11 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--geosite", required=True, type=Path)
     parser.add_argument("--geoip", required=True, type=Path)
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(__file__).resolve().parents[1] / "ANYWHERE",
-    )
+    parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "ANYWHERE")
+    parser.add_argument("--sources", type=Path, default=PROJECT_ROOT / "sources.json")
+    parser.add_argument("--stats", type=Path, default=PROJECT_ROOT / "stats.json")
     return parser.parse_args()
 
 
@@ -62,17 +68,16 @@ def parse_geosite_file(path: Path) -> list[tuple[int, str]]:
         elif line.startswith("keyword:"):
             rules.append((3, line.removeprefix("keyword:").strip()))
         elif line.startswith("full:"):
-            # Anywhere has no exact-domain type. Suffix is the closest supported
-            # representation and may also match subdomains of the exact host.
+            # Anywhere has no exact-domain type. Suffix is the closest
+            # supported representation and may also match subdomains.
             rules.append((2, line.removeprefix("full:").strip()))
         elif line.startswith("regexp:"):
             if path.name == "github":
-                # Approximation of:
-                # ^github-production-release-asset-[0-9a-zA-Z]{6}\.s3\.amazonaws\.com$
+                # Approximation of the GitHub release asset hostname regexp.
                 rules.append((3, "github-production-release-asset-"))
             elif path.name == "private":
                 # The source regexp matches every single-label host. Anywhere
-                # cannot express that without also matching unrelated domains.
+                # cannot express that without matching unrelated domains.
                 continue
             else:
                 raise ValueError(f"unsupported regexp at {path}:{number}: {line}")
@@ -117,7 +122,6 @@ def rule_is_covered(
 
     if rule == higher_priority_rule:
         return True
-
     if higher_type == 2 and rule_type == 2:
         return value.endswith("." + higher_value)
     if higher_type == 3 and rule_type in (2, 3):
@@ -146,7 +150,10 @@ def remove_shadowed(
 def split_rules(
     rules: list[tuple[int, str]], chunk_size: int = MAX_RULES
 ) -> list[list[tuple[int, str]]]:
-    return [rules[index : index + chunk_size] for index in range(0, len(rules), chunk_size)]
+    return [
+        rules[index : index + chunk_size]
+        for index in range(0, len(rules), chunk_size)
+    ]
 
 
 def write_rule_set(path: Path, name: str, rules: list[tuple[int, str]]) -> None:
@@ -182,16 +189,16 @@ def write_chunks(
         )
 
 
-def generate(geosite: Path, geoip: Path, output: Path) -> None:
+def build_rule_sets(geosite: Path, geoip: Path, output: Path) -> None:
     geosite_data = geosite / "data"
+    if not geosite_data.is_dir():
+        raise FileNotFoundError(f"GeoSite data directory not found under {geosite}")
+
     geoip_text = geoip / "text"
     if not geoip_text.is_dir():
         geoip_text = geoip / "release" / "text"
     if not geoip_text.is_dir():
         raise FileNotFoundError(f"GeoIP text directory not found under {geoip}")
-
-    for stale_file in output.rglob("*.arrs") if output.is_dir() else ():
-        stale_file.unlink()
 
     reject = load_domains(geosite_data, REJECT_DOMAINS)
     proxy = remove_shadowed(
@@ -220,18 +227,8 @@ def generate(geosite: Path, geoip: Path, output: Path) -> None:
         "RoscomVPN DEFAULT - DIRECT IP",
         direct_ips,
     )
-    write_chunks(
-        default_dir,
-        "PROXY",
-        "RoscomVPN DEFAULT - PROXY",
-        proxy,
-    )
-    write_chunks(
-        default_dir,
-        "REJECT",
-        "RoscomVPN DEFAULT - REJECT",
-        reject,
-    )
+    write_chunks(default_dir, "PROXY", "RoscomVPN DEFAULT - PROXY", proxy)
+    write_chunks(default_dir, "REJECT", "RoscomVPN DEFAULT - REJECT", reject)
 
     whitelist_direct = remove_shadowed(
         load_domains(geosite_data, WHITELIST_DIRECT_DOMAINS)
@@ -254,6 +251,108 @@ def generate(geosite: Path, geoip: Path, output: Path) -> None:
     )
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(64 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def rule_count(path: Path) -> int:
+    return sum(
+        1
+        for line in path.read_text().splitlines()
+        if line.strip() and line.lstrip()[0].isdigit() and "," in line
+    )
+
+
+def build_stats(output: Path, sources_path: Path) -> dict[str, object]:
+    sources = json.loads(sources_path.read_text())
+    files: list[dict[str, object]] = []
+    profile_totals: dict[str, int] = {}
+
+    for path in sorted(output.rglob("*.arrs")):
+        relative = path.relative_to(output).as_posix()
+        profile = relative.split("/", 1)[0]
+        count = rule_count(path)
+        profile_totals[profile] = profile_totals.get(profile, 0) + count
+        files.append(
+            {
+                "path": relative,
+                "rules": count,
+                "bytes": path.stat().st_size,
+                "sha256": file_sha256(path),
+            }
+        )
+
+    return {
+        "schema": 1,
+        "sources": sources,
+        "profiles": {
+            name: {"rules": count}
+            for name, count in sorted(profile_totals.items())
+        },
+        "files": files,
+    }
+
+
+def write_json(path: Path, data: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    os.replace(temporary, path)
+
+
+def replace_directory(staged: Path, output: Path) -> None:
+    backup = output.with_name(f".{output.name}.backup")
+    if backup.exists():
+        shutil.rmtree(backup)
+
+    had_output = output.exists()
+    if had_output:
+        os.replace(output, backup)
+
+    try:
+        os.replace(staged, output)
+    except BaseException:
+        if had_output and backup.exists():
+            os.replace(backup, output)
+        raise
+    else:
+        if backup.exists():
+            shutil.rmtree(backup)
+
+
+def generate(
+    geosite: Path,
+    geoip: Path,
+    output: Path,
+    sources_path: Path,
+    stats_path: Path,
+) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(
+        tempfile.mkdtemp(prefix=".anywhere-build-", dir=output.parent)
+    )
+    staged_output = staging_root / output.name
+
+    try:
+        build_rule_sets(geosite, geoip, staged_output)
+        validate(staged_output, quiet=True)
+        stats = build_stats(staged_output, sources_path)
+        replace_directory(staged_output, output)
+        write_json(stats_path, stats)
+    finally:
+        shutil.rmtree(staging_root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     arguments = parse_args()
-    generate(arguments.geosite, arguments.geoip, arguments.output)
+    generate(
+        arguments.geosite,
+        arguments.geoip,
+        arguments.output,
+        arguments.sources,
+        arguments.stats,
+    )

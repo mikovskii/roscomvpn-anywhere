@@ -1,0 +1,63 @@
+name: Ошибка маршрутизации
+description: Сообщить о неверном DIRECT, PROXY или REJECT
+title: "[Routing]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Не публикуйте VPN-ключи, приватные подписки и конфигурации серверов.
+
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Профиль
+      options:
+        - DEFAULT
+        - WHITELIST
+    validations:
+      required: true
+
+  - type: input
+    id: target
+    attributes:
+      label: Домен или IP
+      placeholder: example.com или 203.0.113.0/24
+    validations:
+      required: true
+
+  - type: dropdown
+    id: expected
+    attributes:
+      label: Ожидаемое действие
+      options:
+        - DIRECT
+        - PROXY
+        - REJECT
+    validations:
+      required: true
+
+  - type: dropdown
+    id: actual
+    attributes:
+      label: Фактическое действие
+      options:
+        - DIRECT
+        - PROXY
+        - REJECT
+        - Не определено
+    validations:
+      required: true
+
+  - type: input
+    id: anywhere
+    attributes:
+      label: Версия Anywhere
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Дополнительная информация
+      description: Укажите шаги воспроизведения и дату последнего обновления набора.

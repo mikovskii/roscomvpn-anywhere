@@ -98,7 +98,7 @@ def validate_priority(profile: Path, groups: dict[str, list[tuple[int, str]]]) -
                         )
 
 
-def validate(directory: Path) -> None:
+def validate(directory: Path, quiet: bool = False) -> None:
     paths = sorted(directory.rglob("*.arrs"))
     if not paths:
         raise ValueError(f"no .arrs files found under {directory}")
@@ -109,7 +109,8 @@ def validate(directory: Path) -> None:
             action = path.stem.split("_", 1)[0]
             rules = parse_rule_set(path)
             groups.setdefault(action, []).extend(rules)
-            print(f"{path}: {len(rules)} rules")
+            if not quiet:
+                print(f"{path}: {len(rules)} rules")
         validate_priority(profile, groups)
 
 
