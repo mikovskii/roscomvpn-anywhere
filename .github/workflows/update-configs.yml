@@ -1,0 +1,115 @@
+name: Update Anywhere Routing Configs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+  repository_dispatch:
+    types: [update-anywhere-configs]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-anywhere-configs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Find latest source tags
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag() {
+            git ls-remote --tags "https://github.com/${1}.git" \
+              | awk '{print $2}' \
+              | sed -E 's@refs/tags/@@; s@\^\{\}@@' \
+              | grep -E '^[0-9]{12}$' \
+              | sort \
+              | tail -n 1
+          }
+
+          geoip_repo="$(jq -r '.geoip.repository' sources.json)"
+          geosite_repo="$(jq -r '.geosite.repository' sources.json)"
+          geoip_tag="$(latest_tag "$geoip_repo")"
+          geosite_tag="$(latest_tag "$geosite_repo")"
+
+          test -n "$geoip_tag"
+          test -n "$geosite_tag"
+
+          echo "geoip_repo=$geoip_repo" >> "$GITHUB_OUTPUT"
+          echo "geosite_repo=$geosite_repo" >> "$GITHUB_OUTPUT"
+          echo "geoip_tag=$geoip_tag" >> "$GITHUB_OUTPUT"
+          echo "geosite_tag=$geosite_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check out routing sources
+        shell: bash
+        env:
+          GEOIP_REPO: ${{ steps.versions.outputs.geoip_repo }}
+          GEOIP_TAG: ${{ steps.versions.outputs.geoip_tag }}
+          GEOSITE_REPO: ${{ steps.versions.outputs.geosite_repo }}
+          GEOSITE_TAG: ${{ steps.versions.outputs.geosite_tag }}
+        run: |
+          set -euo pipefail
+
+          git clone --depth 1 --branch "$GEOIP_TAG" \
+            "https://github.com/${GEOIP_REPO}.git" "$RUNNER_TEMP/roscomvpn-geoip"
+          git clone --depth 1 --branch "$GEOSITE_TAG" \
+            "https://github.com/${GEOSITE_REPO}.git" "$RUNNER_TEMP/roscomvpn-geosite"
+
+      - name: Generate Anywhere configs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 scripts/generate_anywhere.py \
+            --geoip "$RUNNER_TEMP/roscomvpn-geoip" \
+            --geosite "$RUNNER_TEMP/roscomvpn-geosite"
+
+      - name: Update source versions
+        shell: bash
+        env:
+          GEOIP_TAG: ${{ steps.versions.outputs.geoip_tag }}
+          GEOSITE_TAG: ${{ steps.versions.outputs.geosite_tag }}
+        run: |
+          set -euo pipefail
+
+          tmp="$(mktemp)"
+          jq \
+            --arg geoip "$GEOIP_TAG" \
+            --arg geosite "$GEOSITE_TAG" \
+            '.geoip.tag = $geoip | .geosite.tag = $geosite' \
+            sources.json > "$tmp"
+          mv "$tmp" sources.json
+
+      - name: Validate generated configs
+        run: python3 scripts/validate_anywhere.py
+
+      - name: Commit and push changes
+        shell: bash
+        env:
+          GEOIP_TAG: ${{ steps.versions.outputs.geoip_tag }}
+          GEOSITE_TAG: ${{ steps.versions.outputs.geosite_tag }}
+        run: |
+          set -euo pipefail
+
+          git config --local user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ANYWHERE sources.json
+
+          if git diff --cached --quiet; then
+            echo "Routing configs are already up to date."
+            exit 0
+          fi
+
+          git commit -m "Update routing: GeoIP ${GEOIP_TAG}, GeoSite ${GEOSITE_TAG}"
+          git push
