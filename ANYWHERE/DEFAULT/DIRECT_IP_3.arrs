@@ -3,6 +3,7 @@ name = RoscomVPN DEFAULT - DIRECT IP 3/4
 # Generated from hydraponique/roscomvpn-geosite and roscomvpn-geoip.
 # Assign this set to the action stated in the file name.
 
+0, 144.31.15.0/24
 0, 144.31.48.0/23
 0, 144.31.50.0/24
 0, 144.31.61.0/24
@@ -1094,7 +1095,8 @@ name = RoscomVPN DEFAULT - DIRECT IP 3/4
 0, 167.150.223.0/28
 0, 167.150.223.16/29
 0, 167.150.223.44/30
-0, 167.150.223.48/28
+0, 167.150.223.52/30
+0, 167.150.223.56/29
 0, 167.150.223.64/26
 0, 167.150.223.128/25
 0, 168.80.1.0/24
@@ -10001,5 +10003,3 @@ name = RoscomVPN DEFAULT - DIRECT IP 3/4
 0, 193.169.178.24/30
 0, 193.169.178.28/32
 0, 193.169.178.30/31
-0, 193.169.178.32/27
-0, 193.169.178.64/26
