@@ -3,7 +3,7 @@
   "sources": {
     "geoip": {
       "repository": "hydraponique/roscomvpn-geoip",
-      "tag": "202607040627"
+      "tag": "202607050648"
     },
     "geosite": {
       "repository": "hydraponique/roscomvpn-geosite",
@@ -12,7 +12,7 @@
   },
   "profiles": {
     "DEFAULT": {
-      "rules": 37067
+      "rules": 37518
     },
     "WHITELIST": {
       "rules": 8132
@@ -28,26 +28,26 @@
     {
       "path": "DEFAULT/DIRECT_IP_1.arrs",
       "rules": 10000,
-      "bytes": 188861,
-      "sha256": "9acde6c9aa77eb827c82caad0d59451fc1a14c84a265d08b32e1e5525a63b4a9"
+      "bytes": 188865,
+      "sha256": "b64119ee3c570020f775eb3e443c253cefab0846fa7a267f2327d95a24d0994e"
     },
     {
       "path": "DEFAULT/DIRECT_IP_2.arrs",
       "rules": 10000,
-      "bytes": 193254,
-      "sha256": "4855fc9537e9af1447757a93b0132c2830a2d882b161e41af802c4e4c076849d"
+      "bytes": 193200,
+      "sha256": "6061a5d8aaa8e00ad4859bdc4213ffe26b3ca7bf09bd00358c593a0a0d6da532"
     },
     {
       "path": "DEFAULT/DIRECT_IP_3.arrs",
       "rules": 10000,
-      "bytes": 200178,
-      "sha256": "d1ec1bd07d5a5b598b1f96f54d16440ee4b5359156ad9e9723673512a3db3cea"
+      "bytes": 200084,
+      "sha256": "6da643dd5235db40e656d801a9cd85012bdea2415d59d4b6a283b7a30edbb037"
     },
     {
       "path": "DEFAULT/DIRECT_IP_4.arrs",
-      "rules": 4976,
-      "bytes": 98084,
-      "sha256": "750a18374098640945d57b6bac384d6a91f36946adff42e1e672f5c19d7cf4f3"
+      "rules": 5427,
+      "bytes": 107154,
+      "sha256": "6e8c5f34e70446c3c130acbb956615546d36e2631c22401f9c1e67f9d64cb65c"
     },
     {
       "path": "DEFAULT/PROXY.arrs",
