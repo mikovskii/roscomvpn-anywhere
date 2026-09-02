@@ -7,8 +7,9 @@ import argparse
 import ipaddress
 from pathlib import Path
 
-MAX_RULES = 10_000
+MAX_RULES = 100_000
 ACTION_PRIORITY = ("REJECT", "PROXY", "DIRECT")
+ROUTING_BY_ACTION = {"DIRECT": 1, "REJECT": 2, "PROXY": 0}
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,15 +26,23 @@ def parse_args() -> argparse.Namespace:
 def parse_rule_set(path: Path) -> list[tuple[int, str]]:
     rules: list[tuple[int, str]] = []
     has_name = False
+    routing: int | None = None
 
     for number, raw_line in enumerate(path.read_text().splitlines(), start=1):
         line = raw_line.strip()
         if not line or line.startswith(("#", "//")):
             continue
 
-        if "=" in line and line.split("=", 1)[0].strip().lower() == "name":
-            has_name = bool(line.split("=", 1)[1].strip())
-            continue
+        if "=" in line:
+            key, value = (part.strip() for part in line.split("=", 1))
+            if key.lower() == "name":
+                has_name = bool(value)
+                continue
+            if key.lower() == "routing":
+                if value not in {"0", "1", "2"}:
+                    raise ValueError(f"invalid routing at {path}:{number}: {value}")
+                routing = int(value)
+                continue
 
         try:
             raw_type, value = (part.strip() for part in line.split(",", 1))
@@ -63,6 +72,9 @@ def parse_rule_set(path: Path) -> list[tuple[int, str]]:
         raise ValueError(f"invalid rule count in {path}: {len(rules)}")
     if len(rules) != len(set(rules)):
         raise ValueError(f"duplicate rules in {path}")
+    action = path.stem.split("_", 1)[0]
+    if routing != ROUTING_BY_ACTION.get(action):
+        raise ValueError(f"invalid routing assignment in {path}: {routing}")
     return rules
 
 

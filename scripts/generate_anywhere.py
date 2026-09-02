@@ -14,7 +14,7 @@ from pathlib import Path
 
 from validate_anywhere import validate
 
-MAX_RULES = 10_000
+MAX_RULES = 100_000
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_DIRECT_DOMAINS = (
@@ -156,13 +156,19 @@ def split_rules(
     ]
 
 
-def write_rule_set(path: Path, name: str, rules: list[tuple[int, str]]) -> None:
+def write_rule_set(
+    path: Path,
+    name: str,
+    rules: list[tuple[int, str]],
+    routing: int,
+) -> None:
     if not rules or len(rules) > MAX_RULES:
         raise ValueError(f"{path} has invalid rule count: {len(rules)}")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"name = {name}",
+        f"routing = {routing}",
         "",
         "# Generated from hydraponique/roscomvpn-geosite and roscomvpn-geoip.",
         "# Assign this set to the action stated in the file name.",
@@ -177,8 +183,10 @@ def write_chunks(
     file_prefix: str,
     display_name: str,
     rules: list[tuple[int, str]],
+    routing: int,
+    chunk_size: int = MAX_RULES,
 ) -> None:
-    chunks = split_rules(rules)
+    chunks = split_rules(rules, chunk_size)
     for index, chunk in enumerate(chunks, start=1):
         suffix = f"_{index}" if len(chunks) > 1 else ""
         part = f" {index}/{len(chunks)}" if len(chunks) > 1 else ""
@@ -186,6 +194,7 @@ def write_chunks(
             directory / f"{file_prefix}{suffix}.arrs",
             f"{display_name}{part}",
             chunk,
+            routing,
         )
 
 
@@ -213,22 +222,18 @@ def build_rule_sets(geosite: Path, geoip: Path, output: Path) -> None:
         load_cidrs(geoip_text / "private.txt")
         + load_cidrs(geoip_text / "direct.txt")
     )
+    direct = unique(direct_domains + direct_ips)
 
     default_dir = output / "DEFAULT"
     write_chunks(
         default_dir,
-        "DIRECT_DOMAINS",
-        "RoscomVPN DEFAULT - DIRECT domains",
-        direct_domains,
+        "DIRECT",
+        "RoscomVPN DEFAULT - DIRECT",
+        direct,
+        1,
     )
-    write_chunks(
-        default_dir,
-        "DIRECT_IP",
-        "RoscomVPN DEFAULT - DIRECT IP",
-        direct_ips,
-    )
-    write_chunks(default_dir, "PROXY", "RoscomVPN DEFAULT - PROXY", proxy)
-    write_chunks(default_dir, "REJECT", "RoscomVPN DEFAULT - REJECT", reject)
+    write_chunks(default_dir, "PROXY", "RoscomVPN DEFAULT - PROXY", proxy, 0)
+    write_chunks(default_dir, "REJECT", "RoscomVPN DEFAULT - REJECT", reject, 2)
 
     whitelist_direct = remove_shadowed(
         load_domains(geosite_data, WHITELIST_DIRECT_DOMAINS)
@@ -242,12 +247,14 @@ def build_rule_sets(geosite: Path, geoip: Path, output: Path) -> None:
         "DIRECT",
         "RoscomVPN WHITELIST - DIRECT",
         whitelist_direct,
+        1,
     )
     write_chunks(
         whitelist_dir,
         "REJECT",
         "RoscomVPN WHITELIST - REJECT",
         reject,
+        2,
     )
 
 

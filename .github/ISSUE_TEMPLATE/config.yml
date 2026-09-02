@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ошибка приложения Anywhere
-    url: https://github.com/Anywhere-Network/Anywhere/issues
+    url: https://github.com/NodePassProject/Anywhere/issues
     about: Сбои и функции самого приложения следует обсуждать в upstream.
   - name: Исходные доменные списки
     url: https://github.com/hydraponique/roscomvpn-geosite/issues

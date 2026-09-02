@@ -72,9 +72,9 @@ class RuleSemanticsTests(unittest.TestCase):
         )
 
     def test_split_never_exceeds_anywhere_limit(self) -> None:
-        rules = [(2, f"{index}.example") for index in range(20_001)]
+        rules = [(2, f"{index}.example") for index in range(200_001)]
         chunks = generator.split_rules(rules)
-        self.assertEqual([len(chunk) for chunk in chunks], [10_000, 10_000, 1])
+        self.assertEqual([len(chunk) for chunk in chunks], [100_000, 100_000, 1])
 
 
 class ValidationTests(unittest.TestCase):
@@ -83,7 +83,7 @@ class ValidationTests(unittest.TestCase):
             profile = Path(directory) / "DEFAULT"
             profile.mkdir()
             (profile / "DIRECT.arrs").write_text(
-                "name = Duplicate\n2, example.com\n2, example.com\n"
+                "name = Duplicate\nrouting = 1\n2, example.com\n2, example.com\n"
             )
             with self.assertRaisesRegex(ValueError, "duplicate"):
                 validator.validate(Path(directory), quiet=True)
@@ -93,12 +93,22 @@ class ValidationTests(unittest.TestCase):
             profile = Path(directory) / "DEFAULT"
             profile.mkdir()
             (profile / "REJECT.arrs").write_text(
-                "name = Reject\n2, example.com\n"
+                "name = Reject\nrouting = 2\n2, example.com\n"
             )
             (profile / "DIRECT.arrs").write_text(
-                "name = Direct\n2, api.example.com\n"
+                "name = Direct\nrouting = 1\n2, api.example.com\n"
             )
             with self.assertRaisesRegex(ValueError, "is covered"):
+                validator.validate(Path(directory), quiet=True)
+
+    def test_validator_rejects_wrong_routing_assignment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory) / "DEFAULT"
+            profile.mkdir()
+            (profile / "DIRECT.arrs").write_text(
+                "name = Direct\nrouting = 0\n2, example.com\n"
+            )
+            with self.assertRaisesRegex(ValueError, "routing assignment"):
                 validator.validate(Path(directory), quiet=True)
 
 

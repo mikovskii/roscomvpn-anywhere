@@ -49,13 +49,16 @@
 
 **Settings → Routing Rules → Subscribe**
 
+Перед установкой включите режим **Rule**. В режимах Global и Direct правила
+маршрутизации не применяются.
+
 ### 2. Добавьте ссылки выбранного профиля
 
 Скопируйте адрес нужной ссылки, вставьте его в поле
 **Anywhere Routing Rule Set URL** и нажмите **Subscribe**.
 
-Каждая ссылка добавляется отдельно. После добавления откройте набор и
-назначьте действие, указанное в таблице.
+Каждая ссылка добавляется отдельно. DIRECT и REJECT назначаются автоматически
+при первом добавлении; для PROXY выберите нужный прокси или цепочку вручную.
 
 > [!TIP]
 > Используйте **Subscribe**, а не импорт локального файла. Подписку можно
@@ -63,28 +66,20 @@
 
 ### DEFAULT
 
-Для установки полного профиля добавьте все семь подписок:
+Для установки полного профиля добавьте три подписки:
 
 | Набор | Назначить действие | Ссылка |
 | --- | --- | --- |
-| DIRECT Domains | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_DOMAINS.arrs) |
-| DIRECT IP 1 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_1.arrs) |
-| DIRECT IP 2 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_2.arrs) |
-| DIRECT IP 3 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_3.arrs) |
-| DIRECT IP 4 | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT_IP_4.arrs) |
-| PROXY | ваш прокси или цепочка | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/PROXY.arrs) |
-| REJECT | **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/REJECT.arrs) |
+| DIRECT | автоматически **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/DIRECT.arrs) |
+| PROXY | выбрать прокси или цепочку | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/PROXY.arrs) |
+| REJECT | автоматически **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/DEFAULT/REJECT.arrs) |
 
 Проверьте назначения после установки:
 
 ```text
-DIRECT Domains  → DIRECT
-DIRECT IP 1     → DIRECT
-DIRECT IP 2     → DIRECT
-DIRECT IP 3     → DIRECT
-DIRECT IP 4     → DIRECT
-PROXY           → ваш VPN-прокси или цепочка
-REJECT          → REJECT
+DIRECT  → DIRECT (автоматически)
+PROXY   → ваш VPN-прокси или цепочка (вручную)
+REJECT  → REJECT (автоматически)
 ```
 
 ### WHITELIST
@@ -93,8 +88,8 @@ REJECT          → REJECT
 
 | Набор | Назначить действие | Ссылка |
 | --- | --- | --- |
-| DIRECT | **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/DIRECT.arrs) |
-| REJECT | **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/REJECT.arrs) |
+| DIRECT | автоматически **DIRECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/DIRECT.arrs) |
+| REJECT | автоматически **REJECT** | [Открыть RAW](https://raw.githubusercontent.com/mikovskii/roscomvpn-anywhere/main/ANYWHERE/WHITELIST/REJECT.arrs) |
 
 В качестве маршрута по умолчанию в Anywhere выберите нужный VPN-прокси или
 цепочку.
@@ -111,25 +106,22 @@ Anywhere повторно загрузит актуальный `.arrs` по с�
 
 ## Частые вопросы
 
-### Почему профиль DEFAULT состоит из семи ссылок?
+### Почему профиль DEFAULT состоит из трёх ссылок?
 
 Anywhere назначает одно действие всему набору правил. Поэтому DIRECT, PROXY и
 REJECT должны храниться отдельно.
 
-Кроме того, Anywhere разрешает не более 10 000 правил в одном пользовательском
-наборе. Список DIRECT превышает этот лимит и разделён на домены и четыре части
-IP-диапазонов.
-
 ### Можно ли установить весь профиль одной ссылкой?
 
-Нет. Текущая версия Anywhere не поддерживает пакетный манифест, вложенные
-`RULE-SET` или действие внутри `.arrs`. Одна ссылка создаёт один набор с одним
-назначаемым действием.
+Нет. Текущая версия Anywhere не поддерживает пакетный манифест или вложенные
+`RULE-SET`. Один `.arrs` создаёт один набор с единым действием, а конкретный
+прокси или цепочку нельзя указать в файле.
 
 ### Почему нельзя объединить DIRECT, PROXY и REJECT?
 
-Формат `.arrs` содержит только имя набора и правила совпадения. Действие
-выбирается отдельно в интерфейсе Anywhere и применяется сразу ко всему набору.
+Действие применяется сразу ко всему набору. Заголовок `routing` умеет задать
+начальное действие Default, DIRECT или REJECT, но не конкретный прокси и не
+разные действия для отдельных правил.
 
 ### Будут ли правила обновляться автоматически в приложении?
 

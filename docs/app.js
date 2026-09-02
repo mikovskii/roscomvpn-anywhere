@@ -8,13 +8,9 @@ const profiles = {
     description:
       "RU/BY и доверенные сервисы напрямую. YouTube, Telegram, GitHub и другие выбранные сервисы через VPN. Реклама и телеметрия блокируются.",
     rules: [
-      ["DIRECT Domains", "DIRECT", `${base}/DEFAULT/DIRECT_DOMAINS.arrs`],
-      ["DIRECT IP 1", "DIRECT", `${base}/DEFAULT/DIRECT_IP_1.arrs`],
-      ["DIRECT IP 2", "DIRECT", `${base}/DEFAULT/DIRECT_IP_2.arrs`],
-      ["DIRECT IP 3", "DIRECT", `${base}/DEFAULT/DIRECT_IP_3.arrs`],
-      ["DIRECT IP 4", "DIRECT", `${base}/DEFAULT/DIRECT_IP_4.arrs`],
-      ["PROXY", "ВАШ VPN", `${base}/DEFAULT/PROXY.arrs`],
-      ["REJECT", "REJECT", `${base}/DEFAULT/REJECT.arrs`],
+      ["DIRECT", "АВТО: DIRECT", `${base}/DEFAULT/DIRECT.arrs`],
+      ["PROXY", "ВЫБРАТЬ VPN", `${base}/DEFAULT/PROXY.arrs`],
+      ["REJECT", "АВТО: REJECT", `${base}/DEFAULT/REJECT.arrs`],
     ],
   },
   whitelist: {
@@ -23,8 +19,8 @@ const profiles = {
     description:
       "Только доверенные ресурсы работают напрямую. Весь остальной трафик использует выбранный в Anywhere маршрут по умолчанию.",
     rules: [
-      ["DIRECT", "DIRECT", `${base}/WHITELIST/DIRECT.arrs`],
-      ["REJECT", "REJECT", `${base}/WHITELIST/REJECT.arrs`],
+      ["DIRECT", "АВТО: DIRECT", `${base}/WHITELIST/DIRECT.arrs`],
+      ["REJECT", "АВТО: REJECT", `${base}/WHITELIST/REJECT.arrs`],
     ],
   },
 };

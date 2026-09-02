@@ -1,4 +1,5 @@
 name = RoscomVPN DEFAULT - PROXY
+routing = 0
 
 # Generated from hydraponique/roscomvpn-geosite and roscomvpn-geoip.
 # Assign this set to the action stated in the file name.
