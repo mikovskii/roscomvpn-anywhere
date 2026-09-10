@@ -3,7 +3,7 @@
   "sources": {
     "geoip": {
       "repository": "hydraponique/roscomvpn-geoip",
-      "tag": "202609090805"
+      "tag": "202609100804"
     },
     "geosite": {
       "repository": "hydraponique/roscomvpn-geosite",
@@ -12,7 +12,7 @@
   },
   "profiles": {
     "DEFAULT": {
-      "rules": 38319
+      "rules": 38307
     },
     "WHITELIST": {
       "rules": 8132
@@ -21,9 +21,9 @@
   "files": [
     {
       "path": "DEFAULT/DIRECT.arrs",
-      "rules": 37245,
-      "bytes": 722795,
-      "sha256": "2195a7d5aa711f845ce95bc5cdc4cb6a707554ba1d73e2e46d8282b5e95c55a0"
+      "rules": 37233,
+      "bytes": 722561,
+      "sha256": "8566451393bfd05eb920342095c5872d2b6a9d216ac09804fca956d26a5f9d6a"
     },
     {
       "path": "DEFAULT/PROXY.arrs",
