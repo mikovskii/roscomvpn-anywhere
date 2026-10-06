@@ -136,6 +136,7 @@ routing = 1
 2, ipify.org
 2, checkip.amazonaws.com
 2, ifconfig.me
+2, api.sypexgeo.net
 2, ipapi.is
 2, iplocate.io
 2, ip.sb
