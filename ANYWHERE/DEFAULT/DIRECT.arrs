@@ -149,6 +149,10 @@ routing = 1
 2, kinescope.io
 2, kinescopecdn.net
 2, redheadsound.studio
+2, autowp.ru
+2, appstorrent.ru
+2, lava.ru
+2, zr.ru
 2, vtbglobalperspectives.com
 2, vtb-direct.com
 2, sber.world
@@ -23168,6 +23172,7 @@ routing = 1
 0, 176.124.222.94/32
 0, 176.124.222.96/27
 0, 176.124.222.128/25
+0, 176.124.223.0/24
 0, 176.124.226.0/23
 0, 176.124.248.0/24
 0, 176.125.64.0/18
