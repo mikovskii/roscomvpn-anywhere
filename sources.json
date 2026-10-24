@@ -1,7 +1,7 @@
 {
   "geoip": {
     "repository": "hydraponique/roscomvpn-geoip",
-    "tag": "202610230828"
+    "tag": "202610240803"
   },
   "geosite": {
     "repository": "hydraponique/roscomvpn-geosite",
