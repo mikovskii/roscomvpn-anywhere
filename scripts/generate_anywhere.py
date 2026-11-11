@@ -12,9 +12,13 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from validate_anywhere import validate
+from validate_anywhere import rule_is_covered, validate
 
 MAX_RULES = 100_000
+# A set may drift by this much between builds before the update is held
+# for review; both limits must be exceeded to fail.
+MAX_CHANGE_RATIO = 0.15
+MAX_CHANGE_RULES = 50
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_DIRECT_DOMAINS = (
@@ -49,6 +53,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "ANYWHERE")
     parser.add_argument("--sources", type=Path, default=PROJECT_ROOT / "sources.json")
     parser.add_argument("--stats", type=Path, default=PROJECT_ROOT / "stats.json")
+    parser.add_argument(
+        "--allow-large-change",
+        action="store_true",
+        help="accept rule counts that moved past the drift limits",
+    )
     return parser.parse_args()
 
 
@@ -111,26 +120,6 @@ def load_cidrs(path: Path) -> list[tuple[int, str]]:
             raise ValueError(f"invalid CIDR at {path}:{number}: {line}") from error
         rules.append((0 if network.version == 4 else 1, str(network)))
     return unique(rules)
-
-
-def rule_is_covered(
-    rule: tuple[int, str],
-    higher_priority_rule: tuple[int, str],
-) -> bool:
-    rule_type, value = rule
-    higher_type, higher_value = higher_priority_rule
-
-    if rule == higher_priority_rule:
-        return True
-    if higher_type == 2 and rule_type == 2:
-        return value.endswith("." + higher_value)
-    if higher_type == 3 and rule_type in (2, 3):
-        return higher_value in value
-    if higher_type in (0, 1) and rule_type == higher_type:
-        network = ipaddress.ip_network(value, strict=False)
-        higher_network = ipaddress.ip_network(higher_value, strict=False)
-        return network.subnet_of(higher_network)
-    return False
 
 
 def remove_shadowed(
@@ -304,6 +293,35 @@ def build_stats(output: Path, sources_path: Path) -> dict[str, object]:
     }
 
 
+def rule_counts_by_set(stats: dict[str, object]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for file in stats.get("files", []):
+        # DEFAULT/DIRECT_2.arrs and DEFAULT/DIRECT.arrs are the same set.
+        profile, name = file["path"].split("/", 1)
+        key = f"{profile}/{name.removesuffix('.arrs').split('_', 1)[0]}"
+        counts[key] = counts.get(key, 0) + file["rules"]
+    return counts
+
+
+def check_rule_count_changes(
+    previous: dict[str, object],
+    current: dict[str, object],
+) -> None:
+    before = rule_counts_by_set(previous)
+    after = rule_counts_by_set(current)
+    problems = []
+    for key in sorted(before.keys() | after.keys()):
+        old, new = before.get(key, 0), after.get(key, 0)
+        delta = abs(new - old)
+        if delta > MAX_CHANGE_RULES and delta > old * MAX_CHANGE_RATIO:
+            problems.append(f"{key}: {old} -> {new}")
+    if problems:
+        raise ValueError(
+            "rule counts changed more than expected, rerun with "
+            "--allow-large-change if this is intended: " + ", ".join(problems)
+        )
+
+
 def write_json(path: Path, data: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
@@ -337,6 +355,7 @@ def generate(
     output: Path,
     sources_path: Path,
     stats_path: Path,
+    allow_large_change: bool = False,
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     staging_root = Path(
@@ -348,6 +367,8 @@ def generate(
         build_rule_sets(geosite, geoip, staged_output)
         validate(staged_output, quiet=True)
         stats = build_stats(staged_output, sources_path)
+        if stats_path.is_file() and not allow_large_change:
+            check_rule_count_changes(json.loads(stats_path.read_text()), stats)
         replace_directory(staged_output, output)
         write_json(stats_path, stats)
     finally:
@@ -362,4 +383,5 @@ if __name__ == "__main__":
         arguments.output,
         arguments.sources,
         arguments.stats,
+        arguments.allow_large_change,
     )

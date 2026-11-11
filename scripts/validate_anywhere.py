@@ -11,6 +11,32 @@ MAX_RULES = 100_000
 ACTION_PRIORITY = ("REJECT", "PROXY", "DIRECT")
 ROUTING_BY_ACTION = {"DIRECT": 1, "REJECT": 2, "PROXY": 0}
 
+# Single-label suffixes match a whole TLD. Only these reserved or
+# brand TLDs are expected from the sources; anything else is treated
+# as a broken upstream list rather than shipped.
+ALLOWED_SINGLE_LABEL_SUFFIXES = frozenset(
+    {
+        "example",
+        "internal",
+        "invalid",
+        "lan",
+        "local",
+        "localdomain",
+        "localhost",
+        "psk",
+        "test",
+        "xbox",
+        "yandex",
+        "youtube",
+    }
+)
+MIN_PREFIX_LENGTH = {4: 8, 6: 16}
+# Broader networks are accepted only inside multicast and reserved space.
+ALLOWED_BROAD_NETWORKS = tuple(
+    ipaddress.ip_network(network)
+    for network in ("224.0.0.0/3", "fc00::/7", "fe80::/10", "ff00::/8")
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -63,6 +89,16 @@ def parse_rule_set(path: Path) -> list[tuple[int, str]]:
             expected_version = 4 if rule_type == 0 else 6
             if network.version != expected_version:
                 raise ValueError(f"CIDR type mismatch at {path}:{number}: {line}")
+            if network.prefixlen < MIN_PREFIX_LENGTH[network.version] and not any(
+                network.version == allowed.version and network.subnet_of(allowed)
+                for allowed in ALLOWED_BROAD_NETWORKS
+            ):
+                raise ValueError(f"CIDR is too broad at {path}:{number}: {line}")
+        elif rule_type == 2:
+            if "." not in value and value.lower() not in ALLOWED_SINGLE_LABEL_SUFFIXES:
+                raise ValueError(
+                    f"unexpected top-level suffix at {path}:{number}: {line}"
+                )
 
         rules.append((rule_type, value.lower()))
 
@@ -110,6 +146,23 @@ def validate_priority(profile: Path, groups: dict[str, list[tuple[int, str]]]) -
                         )
 
 
+def default_tier_overrides(
+    groups: dict[str, list[tuple[int, str]]],
+) -> list[tuple[tuple[int, str], tuple[int, str]]]:
+    """PROXY rules that a DIRECT rule wins while PROXY stays on Default.
+
+    PROXY is seeded with routing = 0, which Anywhere loads into the Neutral
+    tier, below the User tier holding DIRECT. A broader DIRECT rule then
+    beats the more specific PROXY rule until PROXY gets an explicit action.
+    """
+    return [
+        (proxy_rule, direct_rule)
+        for proxy_rule in groups.get("PROXY", [])
+        for direct_rule in groups.get("DIRECT", [])
+        if rule_is_covered(proxy_rule, direct_rule)
+    ]
+
+
 def validate(directory: Path, quiet: bool = False) -> None:
     paths = sorted(directory.rglob("*.arrs"))
     if not paths:
@@ -124,6 +177,12 @@ def validate(directory: Path, quiet: bool = False) -> None:
             if not quiet:
                 print(f"{path}: {len(rules)} rules")
         validate_priority(profile, groups)
+        if not quiet:
+            for proxy_rule, direct_rule in default_tier_overrides(groups):
+                print(
+                    f"warning: {profile.name}: PROXY rule {proxy_rule} needs an "
+                    f"explicit action, DIRECT rule {direct_rule} wins on Default"
+                )
 
 
 if __name__ == "__main__":

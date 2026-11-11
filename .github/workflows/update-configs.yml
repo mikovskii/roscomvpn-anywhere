@@ -2,6 +2,15 @@ name: Update Anywhere Routing Configs
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_large_change:
+        description: Accept rule counts that moved past the drift limits
+        type: boolean
+        default: false
+      release:
+        description: Publish a GitHub Release if the generated files change
+        type: boolean
+        default: false
   schedule:
     - cron: "17 */6 * * *"
   repository_dispatch:
@@ -110,11 +119,18 @@ jobs:
       - name: Generate and validate configs
         if: steps.versions.outputs.changed == 'true'
         shell: bash
+        env:
+          ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change }}
         run: |
           set -euo pipefail
+          extra_args=()
+          if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
+            extra_args+=(--allow-large-change)
+          fi
           python3 scripts/generate_anywhere.py \
             --geoip "$RUNNER_TEMP/roscomvpn-geoip" \
-            --geosite "$RUNNER_TEMP/roscomvpn-geosite"
+            --geosite "$RUNNER_TEMP/roscomvpn-geosite" \
+            "${extra_args[@]}"
           python3 scripts/validate_anywhere.py
           python3 -m unittest discover -s tests -v
 
@@ -143,8 +159,29 @@ jobs:
           echo "created=true" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Build release archives
+      # Releases follow generator changes, not every upstream data refresh:
+      # subscribers already pull the latest files from GitHub Raw.
+      - name: Decide whether to release
         if: steps.commit.outputs.created == 'true'
+        id: release
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_INPUT: ${{ inputs.release }}
+          GENERATOR_CHANGED: >-
+            ${{ contains(toJSON(github.event.commits.*.modified), 'scripts/generate_anywhere.py')
+             || contains(toJSON(github.event.commits.*.added), 'scripts/generate_anywhere.py') }}
+        run: |
+          set -euo pipefail
+          publish=false
+          if [[ "$EVENT_NAME" == "push" && "$GENERATOR_CHANGED" == "true" ]] ||
+             [[ "$EVENT_NAME" == "workflow_dispatch" && "$RELEASE_INPUT" == "true" ]]; then
+            publish=true
+          fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+      - name: Build release archives
+        if: steps.release.outputs.publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -159,7 +196,7 @@ jobs:
           )
 
       - name: Publish GitHub Release
-        if: steps.commit.outputs.created == 'true'
+        if: steps.release.outputs.publish == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

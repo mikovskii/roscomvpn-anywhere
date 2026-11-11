@@ -111,6 +111,66 @@ class ValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "routing assignment"):
                 validator.validate(Path(directory), quiet=True)
 
+    def test_validator_rejects_unexpected_top_level_suffix(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory) / "DEFAULT"
+            profile.mkdir()
+            (profile / "DIRECT.arrs").write_text(
+                "name = Direct\nrouting = 1\n2, localhost\n2, com\n"
+            )
+            with self.assertRaisesRegex(ValueError, "top-level suffix"):
+                validator.validate(Path(directory), quiet=True)
+
+    def test_validator_rejects_broad_public_cidr(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory) / "DEFAULT"
+            profile.mkdir()
+            (profile / "DIRECT.arrs").write_text(
+                "name = Direct\nrouting = 1\n0, 224.0.0.0/3\n1, fc00::/7\n0, 0.0.0.0/0\n"
+            )
+            with self.assertRaisesRegex(ValueError, "too broad"):
+                validator.validate(Path(directory), quiet=True)
+
+    def test_default_tier_overrides_report_nested_proxy_rules(self) -> None:
+        groups = {
+            "DIRECT": [(2, "twitch.tv"), (0, "10.0.0.0/8")],
+            "PROXY": [(2, "ads.twitch.tv"), (2, "youtube.com")],
+        }
+        self.assertEqual(
+            validator.default_tier_overrides(groups),
+            [((2, "ads.twitch.tv"), (2, "twitch.tv"))],
+        )
+
+
+class RuleCountGuardTests(unittest.TestCase):
+    @staticmethod
+    def stats(**counts: int) -> dict[str, object]:
+        return {
+            "files": [
+                {"path": path.replace("__", "/") + ".arrs", "rules": rules}
+                for path, rules in counts.items()
+            ]
+        }
+
+    def test_small_drift_is_accepted(self) -> None:
+        generator.check_rule_count_changes(
+            self.stats(DEFAULT__DIRECT=1000, DEFAULT__PROXY=40),
+            self.stats(DEFAULT__DIRECT=1100, DEFAULT__PROXY=80),
+        )
+
+    def test_large_drift_fails(self) -> None:
+        with self.assertRaisesRegex(ValueError, "DEFAULT/DIRECT: 1000 -> 500"):
+            generator.check_rule_count_changes(
+                self.stats(DEFAULT__DIRECT=1000),
+                self.stats(DEFAULT__DIRECT=500),
+            )
+
+    def test_chunks_are_counted_as_one_set(self) -> None:
+        generator.check_rule_count_changes(
+            self.stats(DEFAULT__DIRECT=150_000),
+            self.stats(DEFAULT__DIRECT_1=100_000, DEFAULT__DIRECT_2=50_000),
+        )
+
 
 class AtomicGenerationTests(unittest.TestCase):
     def test_failed_build_preserves_existing_output(self) -> None:
